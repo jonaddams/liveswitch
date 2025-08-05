@@ -1,0 +1,14 @@
+curl -X POST http://localhost:5000/api/documents \
+  -H "Authorization: Token token=<API token>" \
+  -F page.html=@/path/to/page.html \
+  -F style.css=@/path/to/style.css \
+  -F my-image.jpg=@/path/to/my-image.jpg \
+  -F OpenSans-Regular.ttf=@/path/to/OpenSans-Regular.ttf \
+  -F generation='{ 
+    "html": "page.html", 
+    "assets": [
+      "style.css",
+      "my-image.jpg",
+      "OpenSans-Regular.ttf"
+    ]
+  }'
