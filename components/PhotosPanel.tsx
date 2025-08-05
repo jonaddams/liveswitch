@@ -23,7 +23,6 @@ export default function PhotosPanel({ onDragStart, onDragEnd }: PhotosPanelProps
     <div className="photos-panel">
       <div className="photos-header">
         <h2>Photos</h2>
-        <div className="photos-date">Jul 29, 2025</div>
       </div>
       <div className="photos-grid">
         {sampleImages.map((imageData, index) => (
