@@ -61,7 +61,13 @@ export default function Home() {
 			{/* Middle Panel - Editor */}
 			<div className="editor-panel">
 				<div className="editor-header">
-					<div className="editor-title">Report Designer</div>
+					<div className="flex items-center gap-3">
+						<svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+							<path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm0 2h12v8H4V6z"/>
+							<path d="M6 8h8v1H6V8zm0 2h8v1H6v-1zm0 2h5v1H6v-1z"/>
+						</svg>
+						<div className="editor-title">Report Designer</div>
+					</div>
 					<TemplateSelector
 						onTemplateSelect={handleTemplateSelect}
 						currentTemplate={currentTemplate}
