@@ -1,115 +1,124 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { convertHtmlToPdf } from '@/lib/pdf-actions'
-import PDFViewer from '@/components/PDFViewer'
+import { useState } from "react";
+import PDFViewer from "@/components/PDFViewer";
+import { convertHtmlToPdf } from "@/lib/pdf-actions";
 
 interface PdfPreviewPanelProps {
-  htmlContent: string;
+	htmlContent: string;
 }
 
 export default function PdfPreviewPanel({ htmlContent }: PdfPreviewPanelProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+	const [isGenerating, setIsGenerating] = useState(false);
+	const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+	const [error, setError] = useState<string | null>(null);
 
-  const handleGeneratePdf = async () => {
-    if (!htmlContent.trim()) {
-      setError('No content to convert');
-      return;
-    }
+	const handleGeneratePdf = async () => {
+		if (!htmlContent.trim()) {
+			setError("No content to convert");
+			return;
+		}
 
-    setIsGenerating(true);
-    setError(null);
-    
-    try {
-      // Clean up HTML for PDF generation - convert editor elements to presentation elements
-      const cleanHtmlForPdf = (html: string): string => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
-        
-        // Remove contenteditable attributes
-        doc.querySelectorAll('[contenteditable]').forEach(element => {
-          element.removeAttribute('contenteditable');
-        });
-        
-        // Track photo sections for page break logic
-        const photoSections: Element[] = [];
-        
-        // Convert photo placeholders to clean images or remove empty ones
-        doc.querySelectorAll('.photo-placeholder').forEach(placeholder => {
-          const imageContainer = placeholder.querySelector('.image-container');
-          const image = placeholder.querySelector('.dropped-image');
-          
-          if (image && imageContainer) {
-            // Replace placeholder with a clean div containing just the image
-            const cleanDiv = doc.createElement('div');
-            cleanDiv.className = 'photo-section';
-            
-            const cleanImage = doc.createElement('img');
-            cleanImage.src = image.getAttribute('src') || '';
-            cleanImage.alt = 'Project photo';
-            cleanImage.style.cssText = 'max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;';
-            
-            cleanDiv.appendChild(cleanImage);
-            placeholder.parentNode?.replaceChild(cleanDiv, placeholder);
-            photoSections.push(cleanDiv);
-          } else {
-            // Remove empty placeholder
-            placeholder.remove();
-          }
-        });
-        
-        // Remove resize handles
-        doc.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
-        
-        // Remove any editor-specific classes and attributes
-        doc.querySelectorAll('.has-image').forEach(element => {
-          element.classList.remove('has-image');
-        });
-        
-        doc.querySelectorAll('.drag-over').forEach(element => {
-          element.classList.remove('drag-over');
-        });
-        
-        // Add page breaks for better PDF organization
-        // Page 1: Content up to "Before Photos" heading
-        // Page 2: Photo sections 
-        // Page 3: Remaining content after photos
-        
-        // Look for "Before Photos" heading to place page break before it
-        const beforePhotosHeading = Array.from(doc.querySelectorAll('h3')).find(h3 => 
-          h3.textContent?.trim() === 'Before Photos'
-        );
-        
-        if (beforePhotosHeading) {
-          // Add page break before "Before Photos" heading
-          const pageBreakBefore = doc.createElement('div');
-          pageBreakBefore.style.cssText = 'page-break-after: always;';
-          beforePhotosHeading.parentNode?.insertBefore(pageBreakBefore, beforePhotosHeading);
-        }
-        
-        if (photoSections.length > 0) {
-          // Add page break after the last photo section
-          const lastPhotoSection = photoSections[photoSections.length - 1];
-          const pageBreakAfter = doc.createElement('div');
-          pageBreakAfter.style.cssText = 'page-break-after: always;';
-          
-          // Insert after the last photo section
-          if (lastPhotoSection.nextSibling) {
-            lastPhotoSection.parentNode?.insertBefore(pageBreakAfter, lastPhotoSection.nextSibling);
-          } else {
-            lastPhotoSection.parentNode?.appendChild(pageBreakAfter);
-          }
-        }
-        
-        return doc.body.innerHTML;
-      };
-      
-      const cleanedHtml = cleanHtmlForPdf(htmlContent);
-      
-      // Create complete HTML document for conversion
-      const completeHtml = `
+		setIsGenerating(true);
+		setError(null);
+
+		try {
+			// Clean up HTML for PDF generation - convert editor elements to presentation elements
+			const cleanHtmlForPdf = (html: string): string => {
+				const parser = new DOMParser();
+				const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+
+				// Remove contenteditable attributes
+				doc.querySelectorAll("[contenteditable]").forEach((element) => {
+					element.removeAttribute("contenteditable");
+				});
+
+				// Track photo sections for page break logic
+				const photoSections: Element[] = [];
+
+				// Convert photo placeholders to clean images or remove empty ones
+				doc.querySelectorAll(".photo-placeholder").forEach((placeholder) => {
+					const imageContainer = placeholder.querySelector(".image-container");
+					const image = placeholder.querySelector(".dropped-image");
+
+					if (image && imageContainer) {
+						// Replace placeholder with a clean div containing just the image
+						const cleanDiv = doc.createElement("div");
+						cleanDiv.className = "photo-section";
+
+						const cleanImage = doc.createElement("img");
+						cleanImage.src = image.getAttribute("src") || "";
+						cleanImage.alt = "Project photo";
+						cleanImage.style.cssText =
+							"max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;";
+
+						cleanDiv.appendChild(cleanImage);
+						placeholder.parentNode?.replaceChild(cleanDiv, placeholder);
+						photoSections.push(cleanDiv);
+					} else {
+						// Remove empty placeholder
+						placeholder.remove();
+					}
+				});
+
+				// Remove resize handles
+				doc
+					.querySelectorAll(".resize-handle")
+					.forEach((handle) => handle.remove());
+
+				// Remove any editor-specific classes and attributes
+				doc.querySelectorAll(".has-image").forEach((element) => {
+					element.classList.remove("has-image");
+				});
+
+				doc.querySelectorAll(".drag-over").forEach((element) => {
+					element.classList.remove("drag-over");
+				});
+
+				// Add page breaks for better PDF organization
+				// Page 1: Content up to "Before Photos" heading
+				// Page 2: Photo sections
+				// Page 3: Remaining content after photos
+
+				// Look for "Before Photos" heading to place page break before it
+				const beforePhotosHeading = Array.from(doc.querySelectorAll("h3")).find(
+					(h3) => h3.textContent?.trim() === "Before Photos",
+				);
+
+				if (beforePhotosHeading) {
+					// Add page break before "Before Photos" heading
+					const pageBreakBefore = doc.createElement("div");
+					pageBreakBefore.style.cssText = "page-break-after: always;";
+					beforePhotosHeading.parentNode?.insertBefore(
+						pageBreakBefore,
+						beforePhotosHeading,
+					);
+				}
+
+				if (photoSections.length > 0) {
+					// Add page break after the last photo section
+					const lastPhotoSection = photoSections[photoSections.length - 1];
+					const pageBreakAfter = doc.createElement("div");
+					pageBreakAfter.style.cssText = "page-break-after: always;";
+
+					// Insert after the last photo section
+					if (lastPhotoSection.nextSibling) {
+						lastPhotoSection.parentNode?.insertBefore(
+							pageBreakAfter,
+							lastPhotoSection.nextSibling,
+						);
+					} else {
+						lastPhotoSection.parentNode?.appendChild(pageBreakAfter);
+					}
+				}
+
+				return doc.body.innerHTML;
+			};
+
+			const cleanedHtml = cleanHtmlForPdf(htmlContent);
+
+			// Create complete HTML document for conversion
+			const completeHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -229,106 +238,117 @@ export default function PdfPreviewPanel({ htmlContent }: PdfPreviewPanelProps) {
 </body>
 </html>`;
 
-      const result = await convertHtmlToPdf(completeHtml);
-      
-      if (result.success && result.pdfUrl) {
-        setPdfUrl(result.pdfUrl);
-        setError(null);
-      } else {
-        setError(result.error || 'Failed to generate PDF');
-        setPdfUrl(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      setPdfUrl(null);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+			const result = await convertHtmlToPdf(completeHtml);
 
-  const handleDownloadHtml = () => {
-    // Clean HTML for download as well
-    const cleanHtmlForPdf = (html: string): string => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html');
-      
-      // Remove contenteditable attributes
-      doc.querySelectorAll('[contenteditable]').forEach(element => {
-        element.removeAttribute('contenteditable');
-      });
-      
-      // Track photo sections for page break logic
-      const photoSections: Element[] = [];
-      
-      // Convert photo placeholders to clean images or remove empty ones
-      doc.querySelectorAll('.photo-placeholder').forEach(placeholder => {
-        const imageContainer = placeholder.querySelector('.image-container');
-        const image = placeholder.querySelector('.dropped-image');
-        
-        if (image && imageContainer) {
-          // Replace placeholder with a clean div containing just the image
-          const cleanDiv = doc.createElement('div');
-          cleanDiv.className = 'photo-section';
-          
-          const cleanImage = doc.createElement('img');
-          cleanImage.src = image.getAttribute('src') || '';
-          cleanImage.alt = 'Project photo';
-          cleanImage.style.cssText = 'max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;';
-          
-          cleanDiv.appendChild(cleanImage);
-          placeholder.parentNode?.replaceChild(cleanDiv, placeholder);
-          photoSections.push(cleanDiv);
-        } else {
-          // Remove empty placeholder
-          placeholder.remove();
-        }
-      });
-      
-      // Remove resize handles
-      doc.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
-      
-      // Remove any editor-specific classes and attributes
-      doc.querySelectorAll('.has-image').forEach(element => {
-        element.classList.remove('has-image');
-      });
-      
-      doc.querySelectorAll('.drag-over').forEach(element => {
-        element.classList.remove('drag-over');
-      });
-      
-      // Add page breaks for better PDF organization
-      // Look for "Before Photos" heading to place page break before it
-      const beforePhotosHeading = Array.from(doc.querySelectorAll('h3')).find(h3 => 
-        h3.textContent?.trim() === 'Before Photos'
-      );
-      
-      if (beforePhotosHeading) {
-        // Add page break before "Before Photos" heading
-        const pageBreakBefore = doc.createElement('div');
-        pageBreakBefore.style.cssText = 'page-break-after: always;';
-        beforePhotosHeading.parentNode?.insertBefore(pageBreakBefore, beforePhotosHeading);
-      }
-      
-      if (photoSections.length > 0) {
-        // Add page break after the last photo section
-        const lastPhotoSection = photoSections[photoSections.length - 1];
-        const pageBreakAfter = doc.createElement('div');
-        pageBreakAfter.style.cssText = 'page-break-after: always;';
-        
-        // Insert after the last photo section
-        if (lastPhotoSection.nextSibling) {
-          lastPhotoSection.parentNode?.insertBefore(pageBreakAfter, lastPhotoSection.nextSibling);
-        } else {
-          lastPhotoSection.parentNode?.appendChild(pageBreakAfter);
-        }
-      }
-      
-      return doc.body.innerHTML;
-    };
-    
-    const cleanedHtml = cleanHtmlForPdf(htmlContent);
-    
-    const completeHtml = `
+			if (result.success && result.pdfUrl) {
+				setPdfUrl(result.pdfUrl);
+				setError(null);
+			} else {
+				setError(result.error || "Failed to generate PDF");
+				setPdfUrl(null);
+			}
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : "An unexpected error occurred",
+			);
+			setPdfUrl(null);
+		} finally {
+			setIsGenerating(false);
+		}
+	};
+
+	const _handleDownloadHtml = () => {
+		// Clean HTML for download as well
+		const cleanHtmlForPdf = (html: string): string => {
+			const parser = new DOMParser();
+			const doc = parser.parseFromString(`<div>${html}</div>`, "text/html");
+
+			// Remove contenteditable attributes
+			doc.querySelectorAll("[contenteditable]").forEach((element) => {
+				element.removeAttribute("contenteditable");
+			});
+
+			// Track photo sections for page break logic
+			const photoSections: Element[] = [];
+
+			// Convert photo placeholders to clean images or remove empty ones
+			doc.querySelectorAll(".photo-placeholder").forEach((placeholder) => {
+				const imageContainer = placeholder.querySelector(".image-container");
+				const image = placeholder.querySelector(".dropped-image");
+
+				if (image && imageContainer) {
+					// Replace placeholder with a clean div containing just the image
+					const cleanDiv = doc.createElement("div");
+					cleanDiv.className = "photo-section";
+
+					const cleanImage = doc.createElement("img");
+					cleanImage.src = image.getAttribute("src") || "";
+					cleanImage.alt = "Project photo";
+					cleanImage.style.cssText =
+						"max-width: 100%; height: auto; display: block; margin: 0 auto; border-radius: 6px;";
+
+					cleanDiv.appendChild(cleanImage);
+					placeholder.parentNode?.replaceChild(cleanDiv, placeholder);
+					photoSections.push(cleanDiv);
+				} else {
+					// Remove empty placeholder
+					placeholder.remove();
+				}
+			});
+
+			// Remove resize handles
+			doc
+				.querySelectorAll(".resize-handle")
+				.forEach((handle) => handle.remove());
+
+			// Remove any editor-specific classes and attributes
+			doc.querySelectorAll(".has-image").forEach((element) => {
+				element.classList.remove("has-image");
+			});
+
+			doc.querySelectorAll(".drag-over").forEach((element) => {
+				element.classList.remove("drag-over");
+			});
+
+			// Add page breaks for better PDF organization
+			// Look for "Before Photos" heading to place page break before it
+			const beforePhotosHeading = Array.from(doc.querySelectorAll("h3")).find(
+				(h3) => h3.textContent?.trim() === "Before Photos",
+			);
+
+			if (beforePhotosHeading) {
+				// Add page break before "Before Photos" heading
+				const pageBreakBefore = doc.createElement("div");
+				pageBreakBefore.style.cssText = "page-break-after: always;";
+				beforePhotosHeading.parentNode?.insertBefore(
+					pageBreakBefore,
+					beforePhotosHeading,
+				);
+			}
+
+			if (photoSections.length > 0) {
+				// Add page break after the last photo section
+				const lastPhotoSection = photoSections[photoSections.length - 1];
+				const pageBreakAfter = doc.createElement("div");
+				pageBreakAfter.style.cssText = "page-break-after: always;";
+
+				// Insert after the last photo section
+				if (lastPhotoSection.nextSibling) {
+					lastPhotoSection.parentNode?.insertBefore(
+						pageBreakAfter,
+						lastPhotoSection.nextSibling,
+					);
+				} else {
+					lastPhotoSection.parentNode?.appendChild(pageBreakAfter);
+				}
+			}
+
+			return doc.body.innerHTML;
+		};
+
+		const cleanedHtml = cleanHtmlForPdf(htmlContent);
+
+		const completeHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -360,70 +380,60 @@ export default function PdfPreviewPanel({ htmlContent }: PdfPreviewPanelProps) {
 </body>
 </html>`;
 
-    const blob = new Blob([completeHtml], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `report-${new Date().toISOString().split('T')[0]}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+		const blob = new Blob([completeHtml], { type: "text/html" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url;
+		a.download = `report-${new Date().toISOString().split("T")[0]}.html`;
+		document.body.appendChild(a);
+		a.click();
+		document.body.removeChild(a);
+		URL.revokeObjectURL(url);
+	};
 
-  return (
-    <div className="preview-panel">
-      <div className="preview-header">
-        <div className="preview-title">PDF Preview</div>
-      </div>
+	return (
+		<div className="preview-panel">
+			<div className="preview-header">
+				<div className="preview-title">PDF Preview</div>
+			</div>
 
-      <div className="preview-controls">
-        <button 
-          className="generate-pdf-btn" 
-          onClick={handleGeneratePdf}
-          disabled={isGenerating || !htmlContent.trim()}
-        >
-          {isGenerating ? (
-            <>
-              <div className="loading-spinner"></div>
-              Generating...
-            </>
-          ) : (
-            'Generate PDF'
-          )}
-        </button>
-        
-        <a 
-          href="https://signing-demo-baseline-one.vercel.app/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="send-signatures-btn"
-        >
-          Send for Signatures
-        </a>
-      </div>
+			<div className="preview-controls">
+				<button
+					type="button"
+					className={`generate-pdf-btn ${isGenerating ? 'generating' : ''}`}
+					onClick={handleGeneratePdf}
+					disabled={isGenerating || !htmlContent.trim()}
+				>
+					{isGenerating ? "Generating" : "Generate PDF"}
+				</button>
 
-      <div className="preview-content">
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-        
-        <PDFViewer 
-          pdfUrl={pdfUrl || undefined}
-          className="preview-pdf-viewer"
-        />
-        
-        {isGenerating && (
-          <div className="pdf-generating-overlay">
-            <div className="generating-content">
-              <div className="loading-spinner"></div>
-              <div>Generating PDF...</div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+				<a
+					href="https://signing-demo-baseline-one.vercel.app/"
+					target="_blank"
+					rel="noopener noreferrer"
+					className="send-signatures-btn"
+				>
+					Send for Signatures
+				</a>
+			</div>
+
+			<div className="preview-content">
+				{error && <div className="error-message">{error}</div>}
+
+				<PDFViewer
+					pdfUrl={pdfUrl || undefined}
+					className="preview-pdf-viewer"
+				/>
+
+				{isGenerating && (
+					<div className="pdf-generating-overlay">
+						<div className="generating-content">
+							<div className="loading-spinner"></div>
+							<div>Generating PDF...</div>
+						</div>
+					</div>
+				)}
+			</div>
+		</div>
+	);
 }

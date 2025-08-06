@@ -1,32 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from "next/server";
 
 // Mock PDF endpoint for POC demonstration
-export async function GET(request: NextRequest) {
-  // For demo purposes, redirect to a sample PDF
-  // In production, this would return the actual PDF from your SDK conversion
-  
-  // You can replace this with a local sample PDF or generate one
-  const samplePdfUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
-  
-  try {
-    // Proxy the sample PDF to avoid CORS issues
-    const response = await fetch(samplePdfUrl);
-    if (!response.ok) {
-      throw new Error('Failed to fetch sample PDF');
-    }
-    
-    const pdfBuffer = await response.arrayBuffer();
-    
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'inline; filename="report-preview.pdf"',
-        'Cache-Control': 'no-cache',
-      },
-    });
-  } catch (error) {
-    // Fallback to a simple PDF if external fetch fails
-    const mockPdfContent = `%PDF-1.4
+export async function GET(_request: NextRequest) {
+	// For demo purposes, redirect to a sample PDF
+	// In production, this would return the actual PDF from your SDK conversion
+
+	// You can replace this with a local sample PDF or generate one
+	const samplePdfUrl =
+		"https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+
+	try {
+		// Proxy the sample PDF to avoid CORS issues
+		const response = await fetch(samplePdfUrl);
+		if (!response.ok) {
+			throw new Error("Failed to fetch sample PDF");
+		}
+
+		const pdfBuffer = await response.arrayBuffer();
+
+		return new NextResponse(pdfBuffer, {
+			headers: {
+				"Content-Type": "application/pdf",
+				"Content-Disposition": 'inline; filename="report-preview.pdf"',
+				"Cache-Control": "no-cache",
+			},
+		});
+	} catch (_error) {
+		// Fallback to a simple PDF if external fetch fails
+		const mockPdfContent = `%PDF-1.4
 1 0 obj
 <<
 /Type /Catalog
@@ -101,12 +102,12 @@ startxref
 570
 %%EOF`;
 
-    return new NextResponse(mockPdfContent, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': 'inline; filename="mock-report.pdf"',
-        'Cache-Control': 'no-cache',
-      },
-    });
-  }
+		return new NextResponse(mockPdfContent, {
+			headers: {
+				"Content-Type": "application/pdf",
+				"Content-Disposition": 'inline; filename="mock-report.pdf"',
+				"Cache-Control": "no-cache",
+			},
+		});
+	}
 }

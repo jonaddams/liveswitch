@@ -152,7 +152,10 @@ export default function PDFViewer({ pdfUrl, className = "" }: PDFViewerProps) {
 					console.warn("Error during cleanup:", e);
 				});
 			}
-			if (viewerInstanceRef.current && viewerInstanceRef.current !== currentInstance) {
+			if (
+				viewerInstanceRef.current &&
+				viewerInstanceRef.current !== currentInstance
+			) {
 				viewerInstanceRef.current.unload().catch((e: unknown) => {
 					console.warn("Error during cleanup:", e);
 				});

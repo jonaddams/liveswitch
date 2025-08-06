@@ -1,130 +1,150 @@
-'use server'
+"use server";
 
 export interface ConvertToPdfResponse {
-  success: boolean;
-  pdfUrl?: string;
-  error?: string;
+	success: boolean;
+	pdfUrl?: string;
+	error?: string;
 }
 
-export async function convertHtmlToPdf(htmlContent: string): Promise<ConvertToPdfResponse> {
-  try {
-    const BASE_URL = process.env.DOCUMENT_SDK_ENDPOINT || 'http://localhost:8585';
-    const API_TOKEN = process.env.DOCUMENT_SDK_TOKEN || 'secret';
-    
-    console.log('Converting HTML to PDF via Nutrient Server...', {
-      baseUrl: BASE_URL,
-      hasToken: !!API_TOKEN
-    });
+export async function convertHtmlToPdf(
+	htmlContent: string,
+): Promise<ConvertToPdfResponse> {
+	try {
+		const BASE_URL =
+			process.env.DOCUMENT_SDK_ENDPOINT || "http://localhost:8585";
+		const API_TOKEN = process.env.DOCUMENT_SDK_TOKEN || "secret";
 
-    // Create complete HTML document with embedded CSS and images
-    const completeHtml = createCompleteHtmlDocument(htmlContent);
-    
-    // Step 1: Create FormData and send HTML to generate document
-    const formData = new FormData();
-    
-    // Add HTML content as a blob
-    const htmlBlob = new Blob([completeHtml], { type: 'text/html' });
-    formData.append('document.html', htmlBlob, 'document.html');
-    
-    // Add generation configuration
-    const generation = {
-      html: 'document.html',
-      assets: []
-    };
-    formData.append('generation', JSON.stringify(generation));
-    
-    // Request document generation
-    const generateResponse = await fetch(`${BASE_URL}/api/documents`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Token token=${API_TOKEN}`,
-      },
-      body: formData
-    });
+		console.log("Converting HTML to PDF via Nutrient Server...", {
+			baseUrl: BASE_URL,
+			hasToken: !!API_TOKEN,
+		});
 
-    if (!generateResponse.ok) {
-      const errorText = await generateResponse.text();
-      throw new Error(`Document generation failed: ${generateResponse.status} - ${errorText}`);
-    }
+		// Create complete HTML document with embedded CSS and images
+		const completeHtml = createCompleteHtmlDocument(htmlContent);
 
-    const generateResult = await generateResponse.json();
-    console.log('Document generation response:', generateResult);
+		// Step 1: Create FormData and send HTML to generate document
+		const formData = new FormData();
 
-    if (!generateResult.data || !generateResult.data.document_id) {
-      throw new Error('No document ID returned from generation');
-    }
+		// Add HTML content as a blob
+		const htmlBlob = new Blob([completeHtml], { type: "text/html" });
+		formData.append("document.html", htmlBlob, "document.html");
 
-    const documentId = generateResult.data.document_id;
-    console.log('Generated document ID:', documentId);
+		// Add generation configuration
+		const generation = {
+			html: "document.html",
+			assets: [],
+		};
+		formData.append("generation", JSON.stringify(generation));
 
-    // Step 2: Download the PDF
-    const downloadResponse = await fetch(`${BASE_URL}/api/documents/${documentId}/pdf`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Token token=${API_TOKEN}`,
-      }
-    });
+		// Request document generation
+		const generateResponse = await fetch(`${BASE_URL}/api/documents`, {
+			method: "POST",
+			headers: {
+				Authorization: `Token token=${API_TOKEN}`,
+			},
+			body: formData,
+		});
 
-    if (!downloadResponse.ok) {
-      const errorText = await downloadResponse.text();
-      throw new Error(`PDF download failed: ${downloadResponse.status} - ${errorText}`);
-    }
+		if (!generateResponse.ok) {
+			const errorText = await generateResponse.text();
+			throw new Error(
+				`Document generation failed: ${generateResponse.status} - ${errorText}`,
+			);
+		}
 
-    // Verify we got a PDF
-    const contentType = downloadResponse.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/pdf')) {
-      throw new Error(`Expected PDF, got content-type: ${contentType}`);
-    }
+		const generateResult = await generateResponse.json();
+		console.log("Document generation response:", generateResult);
 
-    // Convert response to base64 data URL for the PDF viewer
-    const pdfBuffer = await downloadResponse.arrayBuffer();
-    const pdfBytes = new Uint8Array(pdfBuffer);
-    const pdfBase64 = Buffer.from(pdfBytes).toString('base64');
-    const pdfDataUrl = `data:application/pdf;base64,${pdfBase64}`;
+		if (!generateResult.data || !generateResult.data.document_id) {
+			throw new Error("No document ID returned from generation");
+		}
 
-    console.log('PDF generated successfully, size:', pdfBuffer.byteLength, 'bytes');
+		const documentId = generateResult.data.document_id;
+		console.log("Generated document ID:", documentId);
 
-    return {
-      success: true,
-      pdfUrl: pdfDataUrl
-    };
-    
-  } catch (error) {
-    console.error('PDF conversion error:', error);
-    
-    // Check if it's a connection error (server not running)
-    if (error instanceof Error && 'cause' in error && 
-        (error as any).cause?.code === 'ECONNREFUSED') {
-      console.log('Nutrient server not available, falling back to mock PDF...');
-      
-      try {
-        // Fallback to mock PDF endpoint
-        const mockResponse = await fetch('/api/mock-pdf');
-        if (mockResponse.ok) {
-          const mockPdfBuffer = await mockResponse.arrayBuffer();
-          const mockPdfBytes = new Uint8Array(mockPdfBuffer);
-          const mockPdfBase64 = Buffer.from(mockPdfBytes).toString('base64');
-          const mockPdfDataUrl = `data:application/pdf;base64,${mockPdfBase64}`;
-          
-          return {
-            success: true,
-            pdfUrl: mockPdfDataUrl
-          };
-        }
-      } catch (mockError) {
-        console.error('Mock PDF fallback also failed:', mockError);
-      }
-    }
-    
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to convert HTML to PDF'
-    };
-  }
+		// Step 2: Download the PDF
+		const downloadResponse = await fetch(
+			`${BASE_URL}/api/documents/${documentId}/pdf`,
+			{
+				method: "GET",
+				headers: {
+					Authorization: `Token token=${API_TOKEN}`,
+				},
+			},
+		);
+
+		if (!downloadResponse.ok) {
+			const errorText = await downloadResponse.text();
+			throw new Error(
+				`PDF download failed: ${downloadResponse.status} - ${errorText}`,
+			);
+		}
+
+		// Verify we got a PDF
+		const contentType = downloadResponse.headers.get("content-type");
+		if (!contentType || !contentType.includes("application/pdf")) {
+			throw new Error(`Expected PDF, got content-type: ${contentType}`);
+		}
+
+		// Convert response to base64 data URL for the PDF viewer
+		const pdfBuffer = await downloadResponse.arrayBuffer();
+		const pdfBytes = new Uint8Array(pdfBuffer);
+		const pdfBase64 = Buffer.from(pdfBytes).toString("base64");
+		const pdfDataUrl = `data:application/pdf;base64,${pdfBase64}`;
+
+		console.log(
+			"PDF generated successfully, size:",
+			pdfBuffer.byteLength,
+			"bytes",
+		);
+
+		return {
+			success: true,
+			pdfUrl: pdfDataUrl,
+		};
+	} catch (error) {
+		console.error("PDF conversion error:", error);
+
+		// Check if it's a connection error (server not running)
+		if (
+			error instanceof Error &&
+			"cause" in error &&
+			(error as Error & { cause?: { code?: string } }).cause?.code ===
+				"ECONNREFUSED"
+		) {
+			console.log("Nutrient server not available, falling back to mock PDF...");
+
+			try {
+				// Fallback to mock PDF endpoint
+				const mockResponse = await fetch("/api/mock-pdf");
+				if (mockResponse.ok) {
+					const mockPdfBuffer = await mockResponse.arrayBuffer();
+					const mockPdfBytes = new Uint8Array(mockPdfBuffer);
+					const mockPdfBase64 = Buffer.from(mockPdfBytes).toString("base64");
+					const mockPdfDataUrl = `data:application/pdf;base64,${mockPdfBase64}`;
+
+					return {
+						success: true,
+						pdfUrl: mockPdfDataUrl,
+					};
+				}
+			} catch (mockError) {
+				console.error("Mock PDF fallback also failed:", mockError);
+			}
+		}
+
+		return {
+			success: false,
+			error:
+				error instanceof Error
+					? error.message
+					: "Failed to convert HTML to PDF",
+		};
+	}
 }
 
 function createCompleteHtmlDocument(bodyContent: string): string {
-  return `<!DOCTYPE html>
+	return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -271,18 +291,20 @@ function createCompleteHtmlDocument(bodyContent: string): string {
 </html>`;
 }
 
-export async function downloadPdf(pdfUrl: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    // TODO: Implement actual PDF download logic
-    // This might involve fetching the PDF and streaming it to the user
-    console.log('Downloading PDF from:', pdfUrl);
-    
-    return { success: true };
-  } catch (error) {
-    console.error('PDF download error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to download PDF'
-    };
-  }
+export async function downloadPdf(
+	pdfUrl: string,
+): Promise<{ success: boolean; error?: string }> {
+	try {
+		// TODO: Implement actual PDF download logic
+		// This might involve fetching the PDF and streaming it to the user
+		console.log("Downloading PDF from:", pdfUrl);
+
+		return { success: true };
+	} catch (error) {
+		console.error("PDF download error:", error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : "Failed to download PDF",
+		};
+	}
 }
