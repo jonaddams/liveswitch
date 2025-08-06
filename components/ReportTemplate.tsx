@@ -24,45 +24,48 @@ export default function ReportTemplate({
 	}, [draggedImage]);
 
 	// Image resizing functionality
-	const handleResizeStart = (e: MouseEvent) => {
-		e.preventDefault();
-		e.stopPropagation();
+	const handleResizeStart = useCallback(
+		(e: MouseEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
 
-		const handle = e.target as HTMLElement;
-		const container = handle.parentElement;
-		if (!container) return;
+			const handle = e.target as HTMLElement;
+			const container = handle.parentElement;
+			if (!container) return;
 
-		const startX = e.clientX;
-		const startY = e.clientY;
-		const startWidth = container.offsetWidth;
-		const startHeight = container.offsetHeight;
+			const startX = e.clientX;
+			const startY = e.clientY;
+			const startWidth = container.offsetWidth;
+			const startHeight = container.offsetHeight;
 
-		const handleMouseMove = (e: MouseEvent) => {
-			const deltaX = e.clientX - startX;
-			const deltaY = e.clientY - startY;
+			const handleMouseMove = (e: MouseEvent) => {
+				const deltaX = e.clientX - startX;
+				const deltaY = e.clientY - startY;
 
-			const newWidth = Math.max(100, startWidth + deltaX);
-			const newHeight = Math.max(100, startHeight + deltaY);
+				const newWidth = Math.max(100, startWidth + deltaX);
+				const newHeight = Math.max(100, startHeight + deltaY);
 
-			container.style.width = `${newWidth}px`;
-			container.style.height = `${newHeight}px`;
-		};
+				container.style.width = `${newWidth}px`;
+				container.style.height = `${newHeight}px`;
+			};
 
-		const handleMouseUp = () => {
-			document.removeEventListener("mousemove", handleMouseMove);
-			document.removeEventListener("mouseup", handleMouseUp);
-			document.body.style.cursor = "default";
+			const handleMouseUp = () => {
+				document.removeEventListener("mousemove", handleMouseMove);
+				document.removeEventListener("mouseup", handleMouseUp);
+				document.body.style.cursor = "default";
 
-			// Notify parent of content change
-			if (templateRef.current) {
-				onContentChange(templateRef.current.innerHTML);
-			}
-		};
+				// Notify parent of content change
+				if (templateRef.current) {
+					onContentChange(templateRef.current.innerHTML);
+				}
+			};
 
-		document.addEventListener("mousemove", handleMouseMove);
-		document.addEventListener("mouseup", handleMouseUp);
-		document.body.style.cursor = "nw-resize";
-	};
+			document.addEventListener("mousemove", handleMouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
+			document.body.style.cursor = "nw-resize";
+		},
+		[onContentChange],
+	);
 
 	const setupDragHandlers = useCallback(() => {
 		if (!templateRef.current) {
@@ -230,7 +233,7 @@ export default function ReportTemplate({
 			// Notify parent of initial content
 			onContentChange(bodyContent);
 		}
-	}, [templateHtml]);
+	}, [templateHtml, onContentChange, setupDragHandlers]);
 
 	return (
 		<div className="report-template" id="reportTemplate" ref={templateRef}>

@@ -12,7 +12,7 @@ export default function PhotosPanel({
 	onDragEnd,
 }: PhotosPanelProps) {
 	const handleDragStart = (
-		e: React.DragEvent<HTMLDivElement>,
+		e: React.DragEvent<HTMLButtonElement>,
 		imageData: string,
 	) => {
 		console.log("Drag started with image:", `${imageData.substring(0, 50)}...`);
@@ -23,7 +23,7 @@ export default function PhotosPanel({
 		e.currentTarget.style.opacity = "0.5";
 	};
 
-	const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+	const handleDragEnd = (e: React.DragEvent<HTMLButtonElement>) => {
 		console.log(
 			"Drag end event:",
 			e.type,
@@ -41,15 +41,14 @@ export default function PhotosPanel({
 			</div>
 			<div className="photos-grid">
 				{sampleImages.map((imageData) => (
-					<div
+					<button
 						key={imageData}
+						type="button"
 						className="photo-item"
 						draggable
 						style={{ backgroundImage: `url(${imageData})` }}
 						onDragStart={(e) => handleDragStart(e, imageData)}
 						onDragEnd={handleDragEnd}
-						role="button"
-						tabIndex={0}
 					>
 						<div
 							className="photo-select-indicator"
@@ -57,7 +56,7 @@ export default function PhotosPanel({
 						>
 							○
 						</div>
-					</div>
+					</button>
 				))}
 			</div>
 		</div>

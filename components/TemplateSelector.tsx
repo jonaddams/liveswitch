@@ -65,15 +65,11 @@ export default function TemplateSelector({
 
 					<div className="template-grid">
 						{templates.map((template) => (
-							<div
+							<button
 								key={template.id}
+								type="button"
 								className={`template-card ${currentTemplate === template.name ? "active" : ""}`}
 								onClick={() => handleTemplateSelect(template)}
-								onKeyDown={(e) =>
-									e.key === "Enter" && handleTemplateSelect(template)
-								}
-								role="button"
-								tabIndex={0}
 							>
 								<div className="template-card-icon">{template.icon}</div>
 								<div className="template-card-content">
@@ -85,21 +81,20 @@ export default function TemplateSelector({
 										{template.category}
 									</span>
 								</div>
-							</div>
+							</button>
 						))}
 					</div>
 				</div>
 			)}
 
 			{isOpen && (
-				<div
+				<button
+					type="button"
 					className="template-overlay"
 					onClick={() => setIsOpen(false)}
 					onKeyDown={(e) => e.key === "Escape" && setIsOpen(false)}
-					role="button"
-					tabIndex={0}
 					aria-label="Close template selector"
-				></div>
+				></button>
 			)}
 		</div>
 	);
